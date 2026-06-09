@@ -99,6 +99,18 @@
     width: 95% !important;        /* スマホの端に少しだけ隙間を作る */
 }
 
+/* ==========================================
+   📱 スマホ環境（bodyに is-mobile がついているとき）の文字サイズ指定
+   ========================================== */
+body.is-mobile h1 { font-size: 3em; }          /* タイトルを 3em に */
+body.is-mobile .input-label { font-size: 14px; width: 55px; } /* ラベルを 14px に */
+body.is-mobile .input-field { height: 32px; font-size: 15px; } /* 入力欄を 32px に */
+
+/* 🚀 今後、スマホのときだけ文字を変えたい要素が増えたら、ここに並べるだけでOK */
+body.is-mobile .best-score-label { font-size: 15px; }
+body.is-mobile #trace-result { font-size: 1.5em; }
+
+
 /* 盤面がはみ出さないようにする保険 */
 .board-container {
     max-width: 100% !important;
@@ -433,7 +445,20 @@ function syncGuideText() {
         }
     }
 
+    function applyDeviceOptimization() {
+    const ua = navigator.userAgent.toLowerCase();
+    const windowWidth = window.innerWidth;
     
+    // 画面の土台である body タグを取得
+    const body = document.body;
+
+    // スマホ・タブレット環境の場合
+    if (ua.includes('iphone') || ua.includes('android')) {
+        body.classList.add('is-mobile'); // 📱 bodyに「is-mobile」というクラス（目印）を1つ付ける
+    } else {
+        body.classList.remove('is-mobile'); // 💻 PCなら外す
+    }
+}
 
     function toggleUsage() {
     const content = document.getElementById('usage-content');
