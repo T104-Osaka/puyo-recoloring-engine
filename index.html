@@ -430,10 +430,9 @@ function syncGuideText() {
         createExcelGrid('repaint-board-2');
         syncGuideText();
 
-        // 🚀【追加】ページを開いた瞬間にスマホ判定を実行する
+        // 🚀ページを開いた瞬間にスマホ判定を実行する
         applyDeviceOptimization();
-        // 🚀【追加】画面を回転させた時や、PCでウインドウ幅を縮めた時にも自動連動させる
-        window.addEventListener('resize', applyDeviceOptimization);
+        
     });
 
     function createExcelGrid(gridId) {
