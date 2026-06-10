@@ -797,6 +797,18 @@ function syncGuideText() {
                 updateUICell("original-board", cellIndex, colorIdx, 0, 0);
             }
         }
+        const nextColorsStr = updatedInputs[18].value.padStart(8, '0');
+        const colors = ["#ffdae9", "#ff3e3e", "#4da3ff", "#3eff3e", "#ffeb3e", "#ae81ff"]; // 0:ハート, 1:赤, 2:青, 3:緑, 4:黄, 5:紫
+        
+        for (let i = 0; i < 8; i++) {
+            const cell = document.getElementById(`next-cell-${i}`);
+            if (cell) {
+                const colorIdx = parseInt(nextColorsStr[i]) || 0;
+                // ネクストの〇の中に背景色を塗る（0番ならハート色の#ffdae9）
+                cell.style.backgroundColor = colors[colorIdx];
+                cell.textContent = ""; // 文字はクリア
+            }
+        }
     }
 </script>
 </body>
