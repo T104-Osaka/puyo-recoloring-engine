@@ -616,14 +616,12 @@ function syncGuideText() {
         document.getElementById('trace-result').textContent = "-- 行 -- 列";
     };
 
-
     /* ==========================================================================
-       📸 画像境界検知 ＆ シミュレータ一括入力コアロジック（G/R比率:86%版）
+       📸 画像境界検知 ＆ シミュレータ一括入力コアロジック（完全修正版）
        ========================================================================== */
     const ocrFileInput = document.getElementById('ocr-file-input');
     const ocrCanvas = document.getElementById('ocr-canvas');
     const ocrCtx = ocrCanvas.getContext('2d');
-    const ocrStatusMsg = document.getElementById('ocr-status-msg');
     const ocrPreviewArea = document.getElementById('ocr-preview-area');
 
     // ボタンから画像が選ばれたときのイベントトリガー
@@ -633,13 +631,14 @@ function syncGuideText() {
 
     function handleOcrImage(file) {
         if (!file || !file.type.startsWith('image/')) return;
-        ocrStatusMsg.textContent = "⏳ 盤面を高速解析中...";
-        ocrStatusMsg.style.color = "#f1c40f";
 
         const reader = new FileReader();
         reader.onload = function(event) {
             const img = new Image();
-            img.onload = function() { analyzeAndPopulate(img); };
+            img.onload = function() { 
+                // 💡 画像がブラウザに完全にロードされてから、順序正しく解析関数へ回します
+                analyzeAndPopulate(img); 
+            };
             img.src = event.target.result;
         };
         reader.readAsDataURL(file);
@@ -650,8 +649,11 @@ function syncGuideText() {
         tempCanvas.width = img.width;
         tempCanvas.height = img.height;
         const tempCtx = tempCanvas.getContext('2d', {willReadFrequently: true});
+        
+        // 💡 1. まずCanvasへ画像を物理描画する（これを先にやらないとデータが抜けません）
         tempCtx.drawImage(img, 0, 0);
 
+        // 💡 2. 描画が終わったCanvasから、正確なピクセル配列（RGBA）を取得
         const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
         const data = imageData.data;
         const width = img.width;
@@ -706,11 +708,12 @@ function syncGuideText() {
 
         const finalWidth = rightX - leftX;
 
-        // 指定位置（上のエリア）に切り出し結果を描画
-        ocrCanvas.width = finalWidth; ocrCanvas.height = finalHeight;
+        // 💡 3. プレビュー用Canvasの枠をこじ開け、トリミング画像を表示
+        ocrCanvas.width = finalWidth; 
+        ocrCanvas.height = finalHeight;
         ocrCtx.drawImage(img, leftX, topCutY, finalWidth, finalHeight, 0, 0, finalWidth, finalHeight);
-        ocrPreviewArea.style.display = 'flex';
-
+        
+        // styleで隠されていた表示枠（ocr-preview-area）をflexに変更して可視化
         ocrPreviewArea.style.display = 'flex';
 
         // --- 3. 各マスのサンプリング ＆ テキストボックスへの数値代入 ---
@@ -763,7 +766,6 @@ function syncGuideText() {
                 let detectedId = "0"; // デフォルトは0（ハート）
 
                 if (uniqueInCell.size <= 300) {
-                    // 💡 あなたが導き出した黄金の86%境界比率ロジック
                     detectedId = (avg.g >= avg.r * 0.86) ? "4" : "0"; 
                 } else {
                     let minDest = Infinity;
@@ -776,7 +778,7 @@ function syncGuideText() {
                 rowTextBuffer += detectedId;
             }
 
-            // 🚀 入力欄へ文字を物理代入（バックスペースで消せる状態にします）
+            // 🚀 4. 各テキストボックスへ文字を物理代入（書き換え・消去可能な状態）
             if (row === 0) {
                 if (allFields[18]) allFields[18].value = rowTextBuffer; // N盤面
             } else {
@@ -785,9 +787,16 @@ function syncGuideText() {
             currentLoopY += rowHeight;
         }
 
-        
-        
-        
+        // 💡 5. 【同期】シミュレータに盤面の更新（色の同期）を命令
+        const updatedInputs = document.querySelectorAll('.input-field');
+        for (let rowIdx = 0; rowIdx < 6; rowIdx++) {
+            const rowStr = updatedInputs[rowIdx].value.padStart(8, '0');
+            for (let colIdx = 0; colIdx < 8; colIdx++) {
+                const colorIdx = parseInt(rowStr[colIdx]) || 0;
+                const cellIndex = rowIdx * 8 + colIdx;
+                updateUICell("original-board", cellIndex, colorIdx, 0, 0);
+            }
+        }
     }
 </script>
 </body>
