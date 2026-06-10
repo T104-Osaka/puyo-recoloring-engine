@@ -738,8 +738,8 @@ function syncGuideText() {
             for (let col = 0; col < 8; col++) {
                 let sX, eX, sY, eY;
                 if (row === 0) {
-                    sX = leftX + (col * uW) + (uW * 0.33); eX = leftX + (col * uW) + (uW * 0.67);
-                    sY = topCutY + currentLoopY; eY = topCutY + currentLoopY + rowHeight;
+                    sX = leftX + (col * uW) + (uW * 0.33); eX = leftX + (col * uW) + (uW * 0.48);
+                    sY = topCutY + currentLoopY + (rowHeight * 0.33); eY = topCutY + currentLoopY + (rowHeight * 0.55);
                 } else {
                     sX = leftX + (col * uW) + (uW * 0.25); eX = leftX + (col * uW) + (uW * 0.75);
                     sY = topCutY + currentLoopY + (rowHeight * 0.25); eY = topCutY + currentLoopY + (rowHeight * 0.75);
@@ -765,7 +765,7 @@ function syncGuideText() {
                 const avg = { r: sumR / count, g: sumG / count, b: sumB / count };
                 let detectedId = "0"; // デフォルトは0（ハート）
 
-                if (uniqueInCell.size <= 300) {
+                if (row !== 0 && uniqueInCell.size <= 300) {
                     detectedId = (avg.g >= avg.r * 0.86) ? "4" : "0"; 
                 } else {
                     let minDest = Infinity;
