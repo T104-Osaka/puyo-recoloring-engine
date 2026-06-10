@@ -192,18 +192,22 @@ body.is-mobile .guide-select { height: 44px; font-size: 36px; border-radius: 12p
             </div>
 
             
-        <div style="margin-top: 20px; padding: 12px; background: rgba(44, 62, 80, 0.5); border-radius: 10px; border: 2px dashed #3498db; text-align: center; box-sizing: border-box; width: 100%;">
+       <!-- 📸 入力欄の下にピタッと収まるカメラエリア -->
+            <div style="margin-top: 20px; padding: 12px; background: rgba(44, 62, 80, 0.5); border-radius: 10px; border: 2px dashed #3498db; text-align: center; box-sizing: border-box; width: 100%;">
                 
+                <!-- ① 画像プレビューエリア（上が指定） -->
                 <div id="ocr-preview-area" style="display: none; flex-direction: column; align-items: center; background: #111; padding: 8px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #444;">
                     <div style="font-size: 10px; color: #bdc3c7; margin-bottom: 4px; font-weight: bold;">✂️ 自動切り取り後の盤面プレビュー</div>
                     <canvas id="ocr-canvas" style="max-width: 100%; height: auto; border-radius: 4px; display: block;"></canvas>
                 </div>
 
+                <!-- ② 写真選択ボタンエリア（下が指定） -->
                 <input type="file" id="ocr-file-input" accept="image/*" style="display: none;">
                 <button onclick="document.getElementById('ocr-file-input').click()" style="background: linear-gradient(to bottom, #3498db, #2980b9); color: white; padding: 10px; border: none; border-radius: 20px; cursor: pointer; width: 100%; font-weight: bold; font-size: 14px; box-shadow: 0 4px #1f618d;">
-                    📸 スクショを選択して自動入力
+                    画像を選択して自動入力
                 </button>
             </div>
+        </div>
 
             
         <div class="main-display">
