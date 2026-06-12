@@ -644,16 +644,14 @@ function syncGuideText() {
         reader.readAsDataURL(file);
     }
 
-    function analyzeAndPopulate(img) {
+   function analyzeAndPopulate(img) {
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = img.width;
         tempCanvas.height = img.height;
         const tempCtx = tempCanvas.getContext('2d', {willReadFrequently: true});
         
-        // 💡 1. まずCanvasへ画像を物理描画する（これを先にやらないとデータが抜けません）
         tempCtx.drawImage(img, 0, 0);
 
-        // 💡 2. 描画が終わったCanvasから、正確なピクセル配列（RGBA）を取得
         const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
         const data = imageData.data;
         const width = img.width;
@@ -708,12 +706,10 @@ function syncGuideText() {
 
         const finalWidth = rightX - leftX;
 
-        // 💡 3. プレビュー用Canvasの枠をこじ開け、トリミング画像を表示
         ocrCanvas.width = finalWidth; 
         ocrCanvas.height = finalHeight;
         ocrCtx.drawImage(img, leftX, topCutY, finalWidth, finalHeight, 0, 0, finalWidth, finalHeight);
         
-        // styleで隠されていた表示枠（ocr-preview-area）をflexに変更して可視化
         ocrPreviewArea.style.display = 'flex';
 
         // --- 3. 各マスのサンプリング ＆ テキストボックスへの数値代入 ---
@@ -731,20 +727,66 @@ function syncGuideText() {
 
         const allFields = document.querySelectorAll('.input-field');
 
+        // 🎯【修正①】クラッシュの原因だった配列宣言の漏れをここで100%確保
+        let detectedBonusArray = new Array(48).fill(0);
+        const reserve1Value = allFields[24] ? allFields[24].value.trim() : "0";
+
         for (let row = 0; row < 7; row++) {
             const rowHeight = yRatios[row] * uH;
             let rowTextBuffer = "";
 
             for (let col = 0; col < 8; col++) {
                 let sX, eX, sY, eY;
+                // マスの物理境界を算出（フチ狙い用ベース座標）
+                const cellLeft = leftX + (col * uW);
+                const cellRight = leftX + ((col + 1) * uW);
+                const cellTop = topCutY + currentLoopY;
+                const cellBottom = topCutY + currentLoopY + rowHeight;
+
                 if (row === 0) {
-                    sX = leftX + (col * uW) + (uW * 0.33); eX = leftX + (col * uW) + (uW * 0.48);
-                    sY = topCutY + currentLoopY + (rowHeight * 0.33); eY = topCutY + currentLoopY + (rowHeight * 0.55);
+                    sX = cellLeft + (uW * 0.33); eX = cellLeft + (uW * 0.48);
+                    sY = cellTop + (rowHeight * 0.33); eY = cellTop + (rowHeight * 0.55);
                 } else {
-                    sX = leftX + (col * uW) + (uW * 0.25); eX = leftX + (col * uW) + (uW * 0.75);
-                    sY = topCutY + currentLoopY + (rowHeight * 0.25); eY = topCutY + currentLoopY + (rowHeight * 0.75);
+                    sX = cellLeft + (uW * 0.25); eX = cellLeft + (uW * 0.75);
+                    sY = cellTop + (rowHeight * 0.25); eY = cellTop + (rowHeight * 0.75);
                 }
 
+                // 🎯【修正②】マスの『中心のテカリ』ではなく、『四隅のフチ』から白飛び爆光を正確に逆算
+                let isBonusArea = 0;
+                if (row >= 1) {
+                    let borderSumR = 0, borderSumG = 0, borderCount = 0;
+                    const offsetIn = 4; // フチから4px内側
+                    const samplePoints = [
+                        { x: cellLeft + offsetIn,  y: cellTop + offsetIn },
+                        { x: cellRight - offsetIn, y: cellTop + offsetIn },
+                        { x: cellLeft + offsetIn,  y: cellBottom - offsetIn },
+                        { x: cellRight - offsetIn, y: cellBottom - offsetIn }
+                    ];
+
+                    samplePoints.forEach(pt => {
+                        const px = Math.floor(pt.x);
+                        const py = Math.floor(pt.y);
+                        if (px >= 0 && px < width && py >= 0 && py < height) {
+                            const idx = (py * width + px) * 4;
+                            borderSumR += data[idx];
+                            borderSumG += data[idx+1];
+                            borderCount++;
+                        }
+                    });
+
+                    if (borderCount > 0) {
+                        const bAvgR = borderSumR / borderCount;
+                        const bAvgG = borderSumG / borderCount;
+                        // プロファイラーで弾き出した完全な白飛び閾値（RとGが200以上）
+                        if (bAvgR >= 200 && bAvgG >= 200) {
+                            isBonusArea = 1;
+                        }
+                    }
+                    const cellIndex = (row - 1) * 8 + col;
+                    detectedBonusArray[cellIndex] = isBonusArea;
+                }
+
+                // --- 通常のぷよ色判定 ---
                 let sumR = 0, sumG = 0, sumB = 0, count = 0;
                 let uniqueInCell = new Set();
 
@@ -763,7 +805,7 @@ function syncGuideText() {
                     sumR = data[mi]; sumG = data[mi+1]; sumB = data[mi+2]; count = 1;
                 }
                 const avg = { r: sumR / count, g: sumG / count, b: sumB / count };
-                let detectedId = "0"; // デフォルトは0（ハート）
+                let detectedId = "0";
 
                 if (row !== 0 && uniqueInCell.size <= 300) {
                     detectedId = (avg.g >= avg.r * 0.86) ? "4" : "0"; 
@@ -776,17 +818,9 @@ function syncGuideText() {
                     }
                 }
                 rowTextBuffer += detectedId;
-                // 💡 【追加①】メイン盤面（row >= 1）の時、白飛び爆光検知によるボーナスエリア判定を行う
-                if (row >= 1) {
-                    const cellIndex = (row - 1) * 8 + col;
-                    // プロファイラーで確定した白飛び閾値（RとGが200以上）でBEを検出
-                    if (avg.r >= 200 && avg.g >= 200) {
-                        detectedBonusArray[cellIndex] = 1;
-                    }
-                }
             }
 
-            // 🚀 4. 各テキストボックスへ文字を物理代入（書き換え・消去可能な状態）
+            // 各テキストボックスへ文字を物理代入
             if (row === 0) {
                 if (allFields[18]) allFields[18].value = rowTextBuffer; // N盤面
             } else {
@@ -795,18 +829,20 @@ function syncGuideText() {
             currentLoopY += rowHeight;
         }
 
-        // 💡 【追加②】検出したボーナスエリア配列を「BE行 1〜6」のテキストボックスに代入
-        for (let rIdx = 0; rIdx < 6; rIdx++) {
-            let beStr = "";
-            for (let cIdx = 0; cIdx < 8; cIdx++) {
-                beStr += detectedBonusArray[rIdx * 8 + cIdx].toString();
-            }
-            if (allFields[12 + rIdx]) {
-                allFields[12 + rIdx].value = beStr; // BE行 1〜6 はインデックス12〜17
+        // 🎯【修正③】予備1＝1のときはボーナスエリアテキストボックスの上書きを完全に防ぐ（ロック）
+        if (reserve1Value !== "1") {
+            for (let rIdx = 0; rIdx < 6; rIdx++) {
+                let beStr = "";
+                for (let cIdx = 0; cIdx < 8; cIdx++) {
+                    beStr += detectedBonusArray[rIdx * 8 + cIdx].toString();
+                }
+                if (allFields[12 + rIdx]) {
+                    allFields[12 + rIdx].value = beStr; // BE行1〜6
+                }
             }
         }
 
-        // 💡 5. 【同期】シミュレータに盤面の更新（色の同期）を命令
+        // 💡 5. 【同期】シミュレータに盤面の更新（色の同期 ＆ ボーナス同期）を命令
         const updatedInputs = document.querySelectorAll('.input-field');
         for (let rowIdx = 0; rowIdx < 6; rowIdx++) {
             const rowStr = updatedInputs[rowIdx].value.padStart(8, '0');
@@ -814,21 +850,25 @@ function syncGuideText() {
                 const colorIdx = parseInt(rowStr[colIdx]) || 0;
                 const cellIndex = rowIdx * 8 + colIdx;
 
-                // 💡 【追加③】画面のUIタイル（original-board）にも 'B' の文字を同期させる
-                const isBonus = detectedBonusArray[cellIndex];
+                // 🎯【修正④】予備1＝1の時は現在テキストボックスに入っている手動値を優先してUIに反映
+                let isBonus = detectedBonusArray[cellIndex];
+                if (reserve1Value === "1") {
+                    const currentBeRowStr = updatedInputs[12 + rowIdx].value.padStart(8, '0');
+                    isBonus = parseInt(currentBeRowStr[colIdx]) || 0;
+                }
                 updateUICell("original-board", cellIndex, colorIdx, 0, isBonus);
             }
         }
+        
         const nextColorsStr = updatedInputs[18].value.padStart(8, '0');
-        const colors = ["#ffdae9", "#ff3e3e", "#4da3ff", "#3eff3e", "#ffeb3e", "#ae81ff"]; // 0:ハート, 1:赤, 2:青, 3:緑, 4:黄, 5:紫
+        const colors = ["#ffdae9", "#ff3e3e", "#4da3ff", "#3eff3e", "#ffeb3e", "#ae81ff"];
         
         for (let i = 0; i < 8; i++) {
             const cell = document.getElementById(`next-cell-${i}`);
             if (cell) {
                 const colorIdx = parseInt(nextColorsStr[i]) || 0;
-                // ネクストの〇の中に背景色を塗る（0番ならハート色の#ffdae9）
                 cell.style.backgroundColor = colors[colorIdx];
-                cell.textContent = ""; // 文字はクリア
+                cell.textContent = ""; 
             }
         }
     }
