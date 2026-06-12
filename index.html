@@ -821,13 +821,13 @@ function syncGuideText() {
                 let detectedId = "0";
 
                 // 💡 ボーナスエリア（isBonusArea === 1）の時は、爆光の写り込みを考慮した特別判定
-                if (row !== 0 && isBonusArea === 1&& uniqueInCell.size <= 300) {
+                if (row !== 0 && isBonusArea === 1&& uniqueInCell.size <= 200) {
                     // 白飛びしていても、黄色はGが強く、ハート（ピンク）はRが強い関係性は維持される
                     // 閾値0.86で、光る枠の中の黄色とハートを確実にセパレートする
                     detectedId = (avg.g >= avg.r * 0.86) ? "4" : "0";
                 }
                 // 通常マスで、色数が少ない（テカっている）時
-                else if (row !== 0 && uniqueInCell.size <= 300) {
+                else if (row !== 0 && uniqueInCell.size <= 200) {
                     detectedId = (avg.g >= avg.r * 0.86) ? "4" : "0"; 
                 } 
                 // それ以外の通常時（ユークリッド距離判定）
