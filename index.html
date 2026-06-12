@@ -748,7 +748,7 @@ function syncGuideText() {
                     sY = cellTop + (rowHeight * 0.33); eY = cellTop + (rowHeight * 0.55);
                 } else {
                     sX = cellLeft + (uW * 0.25); eX = cellLeft + (uW * 0.75);
-                    sY = cellTop + (rowHeight * 0.25); eY = cellTop + (rowHeight * 0.68);
+                    sY = cellTop + (rowHeight * 0.25); eY = cellTop + (rowHeight * 0.75);
                 }
 
                 // 🎯【修正②】マスの『中心のテカリ』ではなく、『四隅のフチ』から白飛び爆光を正確に逆算
@@ -807,9 +807,18 @@ function syncGuideText() {
                 const avg = { r: sumR / count, g: sumG / count, b: sumB / count };
                 let detectedId = "0";
 
-                if (row !== 0 && uniqueInCell.size <= 300) {
+                // 💡 ボーナスエリア（isBonusArea === 1）の時は、爆光の写り込みを考慮した特別判定
+                if (row !== 0 && isBonusArea === 1) {
+                    // 白飛びしていても、黄色はGが強く、ハート（ピンク）はRが強い関係性は維持される
+                    // 閾値0.86で、光る枠の中の黄色とハートを確実にセパレートする
+                    detectedId = (avg.g >= avg.r * 0.86) ? "4" : "0";
+                }
+                // 通常マスで、色数が少ない（テカっている）時
+                else if (row !== 0 && uniqueInCell.size <= 300) {
                     detectedId = (avg.g >= avg.r * 0.86) ? "4" : "0"; 
-                } else {
+                } 
+                // それ以外の通常時（ユークリッド距離判定）
+                else {
                     let minDest = Infinity;
                     for (let id in COLOR_PALETTE) {
                         const t = COLOR_PALETTE[id];
