@@ -786,18 +786,31 @@ function syncGuideText() {
                     detectedBonusArray[cellIndex] = isBonusArea;
                 }
 
-                // --- 通常のぷよ色判定 ---
+                // --- 通常のぷよ色判定（平均値の範囲は変えず、色数はその上半分で数える） ---
                 let sumR = 0, sumG = 0, sumB = 0, count = 0;
                 let uniqueInCell = new Set();
 
+                // 平均をとる縦範囲（sY〜eY）の『上半分』の開始・終了座標をここで計算
+                const colorCountStartY = Math.floor(sY);
+                const colorCountEndY   = Math.floor(sY + (eY - sY) * 0.5);
+
+                // 1. 【平均値の計算】範囲は今までの中央50%（sY〜eY）を完全に維持
                 for (let py = Math.floor(sY); py < Math.floor(eY); py++) {
                     for (let px = Math.floor(sX); px < Math.floor(eX); px++) {
                         const i = (py * width + px) * 4;
                         const r = data[i], g = data[i+1], b = data[i+2];
-                        uniqueInCell.add((r << 16) | (g << 8) | b);
 
                         if (r > 240 && g > 240 && b > 240) continue; // テカリ排除
                         sumR += r; sumG += g; sumB += b; count++;
+                    }
+                }
+
+                // 2. 【色数のカウント】平均値エリアの『上半分』のピクセルだけを集計
+                for (let py = colorCountStartY; py < colorCountEndY; py++) {
+                    for (let px = Math.floor(sX); px < Math.floor(eX); px++) {
+                        const i = (py * width + px) * 4;
+                        const r = data[i], g = data[i+1], b = data[i+2];
+                        uniqueInCell.add((r << 16) | (g << 8) | b);
                     }
                 }
                 if (count === 0) {
