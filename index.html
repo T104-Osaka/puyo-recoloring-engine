@@ -536,7 +536,7 @@ function syncGuideText() {
 
             // データのパッキング
             const combinedData = Array.from(inputs).map((input, idx) => {
-                let val = input.value || placeholderHints[idx];
+                let val = (input.value !== "") ? input.value : placeholderHints[idx];
                 val = val.padStart(8, '0');
                 if ((idx >= 0 && idx <= 5) || idx === 18) {
                     return val.split('').map(char => {
