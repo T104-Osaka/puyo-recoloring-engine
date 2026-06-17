@@ -513,7 +513,7 @@ function syncGuideText() {
         document.getElementById('best-score-display').textContent = "探索中";
 
         const inputs = document.querySelectorAll('.input-field');
-        const timeLimit = parseInt(inputs[22].value || placeholderHints[22]);
+        const timeLimit = parseInt(inputs[22].value !== "" ? inputs[22].value : placeholderHints[22]);
         
         // 🚀 プログレスバー開始
         showProgressBar(timeLimit);
@@ -537,7 +537,10 @@ function syncGuideText() {
             // データのパッキング
             const combinedData = Array.from(inputs).map((input, idx) => {
                 let val = (input.value !== "") ? input.value : placeholderHints[idx];
-                val = val.padStart(8, '0');
+                // 💡 盤面行やNEXT行（idx 0〜19）の時だけ padStart をかけ、塗2（idx 21）などの個数欄はスルーする
+    if (idx <= 19) {
+        val = val.padStart(8, '0');
+    }
                 if ((idx >= 0 && idx <= 5) || idx === 18) {
                     return val.split('').map(char => {
                         const num = parseInt(char);
