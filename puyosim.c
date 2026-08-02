@@ -2,8 +2,7 @@
 //puyo_sim
 //低速だが表示が完成済
 //塗り替え数が広い
-//gcc -O3 -march=native -fopenmp 09C25095.c -o 09C25095 -lm
-//gcc 09C25095.c -o 09C25095 -lm
+
 /*
 試験塗り替え（人力で１８８点）
 13121232
@@ -590,13 +589,13 @@ time_t start_time = time(NULL);
     // 1. 各自の道具（カウンター、種、作業盤面）を準備
     unsigned int local_counter = 0;
 	long local_tried = 0; // 個別カウント用
-    unsigned int my_seed = (unsigned int)time(NULL) ^ (tid << 10);
+    unsigned int my_seed = emscripten_get_now() * 1000.0;
 	if (my_seed == 0) my_seed = 1;
-	int local_CN1 = (tid < 20) ? (CN1 - off1[tid]) : CONV_NUM1;
-    int local_CN2 = (tid < 20) ? (CN2 - off2[tid]) : CONV_NUM2;
+	int local_CN1 = (tid < 20) ? (CN1 - off1[tid]) : CN1;
+    int local_CN2 = (tid < 20) ? (CN2 - off2[tid]) : CN2;
 	
-	if (local_CN1 < 0) local_CN1 = CONV_NUM1;
-    if (local_CN2 < 0) local_CN2 = CONV_NUM2;
+	if (local_CN1 < 0) local_CN1 = CN1;
+    if (local_CN2 < 0) local_CN2 = CN2;
 	tid=0;
 while (1) { 
 local_counter++;
@@ -606,10 +605,10 @@ local_tried++;
 			if(tid==hanni){
 				tid=0;
 			}
-			 local_CN1 = (tid < hanni) ? (CN1 - off1[tid]) : CONV_NUM1;
-			 local_CN2 = (tid < hanni) ? (CN2 - off2[tid]) : CONV_NUM2;
-			 if (local_CN1 < 0) local_CN1 = CONV_NUM1;
-			 if (local_CN2 < 0) local_CN2 = CONV_NUM2;
+			 local_CN1 = (tid < hanni) ? (CN1 - off1[tid]) : CN1;
+			 local_CN2 = (tid < hanni) ? (CN2 - off2[tid]) : CN2;
+			 if (local_CN1 < 0) local_CN1 = CN1;
+			 if (local_CN2 < 0) local_CN2 = CN2;
             if (difftime(time(NULL), start_time) >= time_limit) break;
         }
 
