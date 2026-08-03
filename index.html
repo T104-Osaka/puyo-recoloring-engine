@@ -918,19 +918,23 @@ function syncGuideText() {
 
         // 💡 5. 【同期】シミュレータに盤面の更新（色の同期 ＆ ボーナス同期）を命令
         const updatedInputs = document.querySelectorAll('.input-field');
+        const logicMap = getLogicMap(); // 内部変換マップを取得
+
         for (let rowIdx = 0; rowIdx < 6; rowIdx++) {
             const rowStr = updatedInputs[rowIdx].value.padStart(8, '0');
             for (let colIdx = 0; colIdx < 8; colIdx++) {
-                const colorIdx = parseInt(rowStr[colIdx]) || 0;
+                const absoluteColor = parseInt(rowStr[colIdx]) || 0;
                 const cellIndex = rowIdx * 8 + colIdx;
 
-                // 🎯【修正④】予備1＝1の時は現在テキストボックスに入っている手動値を優先してUIに反映
+                // 🚀 絶対色(1:赤...)を、updateUICellが内部で逆変換できるようにスロットID(logicMap.indexOf)へ落とし込む
+                const internalColorSlot = logicMap.indexOf(absoluteColor);
+
                 let isBonus = detectedBonusArray[cellIndex];
                 if (reserve1Value === "1") {
                     const currentBeRowStr = updatedInputs[12 + rowIdx].value.padStart(8, '0');
                     isBonus = parseInt(currentBeRowStr[colIdx]) || 0;
                 }
-                updateUICell("original-board", cellIndex, colorIdx, 0, isBonus);
+                updateUICell("original-board", cellIndex, internalColorSlot !== -1 ? internalColorSlot : absoluteColor, 0, isBonus);
             }
         }
         
