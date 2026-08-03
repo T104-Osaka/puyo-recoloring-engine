@@ -453,6 +453,27 @@ function syncGuideText() {
         createExcelGrid('repaint-board-2');
         syncGuideText();
 
+        // 🚀【追加】テキストボックスを手動入力した際、正しく「塗a/塗b」の色変換を適用して盤面を更新する処理
+        const allFields = document.querySelectorAll('.input-field');
+        for (let r = 0; r < 6; r++) {
+            allFields[r].addEventListener('input', () => {
+                const logicMap = getLogicMap();
+                for (let rowIdx = 0; rowIdx < 6; rowIdx++) {
+                    const rowStr = allFields[rowIdx].value.padStart(8, '0');
+                    for (let colIdx = 0; colIdx < 8; colIdx++) {
+                        const absoluteColor = parseInt(rowStr[colIdx]) || 0;
+                        const cellIndex = rowIdx * 8 + colIdx;
+                        const internalColorSlot = logicMap.indexOf(absoluteColor);
+                        
+                        const currentBeRowStr = allFields[12 + rowIdx].value.padStart(8, '0');
+                        const isBonus = parseInt(currentBeRowStr[colIdx]) || 0;
+
+                        updateUICell("original-board", cellIndex, internalColorSlot !== -1 ? internalColorSlot : absoluteColor, 0, isBonus);
+                    }
+                }
+            });
+        }
+
         // 🚀ページを開いた瞬間にスマホ判定を実行する
         applyDeviceOptimization();
         //一度探索
