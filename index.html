@@ -854,9 +854,15 @@ function syncGuideText() {
                 const gMin5  = getTop5Avg(pixels, 'g', true);
 
                 if (row === 0) {
-                    detectedId = "0"; // ネクスト行はデフォルト
+                    // 🚀【修正】ネクスト(row === 0)は元の判定（ユークリッド距離判定）をそのまま適用
+                    let minDest = Infinity;
+                    for (let id in COLOR_PALETTE) {
+                        const t = COLOR_PALETTE[id];
+                        const d = Math.sqrt(Math.pow(avg.r-t.r,2)+Math.pow(avg.g-t.g,2)+Math.pow(avg.b-t.b,2));
+                        if (d < minDest) { minDest = d; detectedId = id; }
+                    }
                 } else {
-                    // 1. 【ハート判定】
+                    // 本番盤面（row 1〜6）は複合条件で判定 (ハート ➔ 黄 ➔ 赤 ➔ 緑 ➔ 紫/青)
                     const isHeart = (avgAll.b >= 200) && 
                                     (avgAll.r >= 220) && 
                                     (bMax5.g  <= 225) && 
@@ -865,12 +871,10 @@ function syncGuideText() {
                                     (gMin5.b  <= 200) && 
                                     (gMin5.r  >= 173);
 
-                    // 2. 式の計算
                     const condRedBase = (avgAll.r * 1.44 - avgAll.b - 138) > 0;
                     const condYellowB = (bMin5.g * 1.25 - bMin5.b - 125) > 0;
                     const condGreen   = (avgAll.g * 5 - avgAll.b * 6 + 70) > 0;
 
-                    // 分岐ツリー (ハート ➔ 黄 ➔ 赤 ➔ 緑 ➔ 紫/青)
                     if (isHeart) {
                         detectedId = "0"; // ハート
                     } else if (condRedBase && condYellowB) {
