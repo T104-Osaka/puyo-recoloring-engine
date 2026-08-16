@@ -527,7 +527,74 @@ function syncGuideText() {
     }
 }
 
-    function startSearch() {
+function startSearch() {
+        const inputs = document.querySelectorAll('.input-field');
+        const reserve12Val = inputs[35] ? inputs[35].value.trim() : "";
+
+        // 判定用正規表現 (ReV9A_w_0〜9 / ReV9A_r_0〜9)
+        const writeMatch = reserve12Val.match(/^ReV9A_w_([0-9])$/);
+        const readMatch  = reserve12Val.match(/^ReV9A_r_([0-9])$/);
+
+        // 📥 【読み込みのみ実行】探索はスキップ
+        if (readMatch) {
+            const slotIndex = readMatch[1];
+            db.ref(`puyo_slots/slot_${slotIndex}`).once('value').then(snapshot => {
+                const savedData = snapshot.val();
+                if (savedData && Array.isArray(savedData)) {
+                    // 全36個の入力欄へ値を復元
+                    savedData.forEach((textVal, idx) => {
+                        if (inputs[idx]) inputs[idx].value = textVal;
+                    });
+
+                    // 盤面表示の同期
+                    const logicMap = getLogicMap();
+                    for (let rowIdx = 0; rowIdx < 6; rowIdx++) {
+                        const rowStr = (inputs[rowIdx].value || "").padStart(8, '0');
+                        const beStr  = (inputs[12 + rowIdx].value || "").padStart(8, '0');
+                        for (let colIdx = 0; colIdx < 8; colIdx++) {
+                            const absCol = parseInt(rowStr[colIdx]) || 0;
+                            const isBon  = parseInt(beStr[colIdx]) || 0;
+                            const slot   = logicMap.indexOf(absCol);
+                            updateUICell("original-board", rowIdx * 8 + colIdx, slot !== -1 ? slot : absCol, 0, isBon);
+                        }
+                    }
+
+                    // NEXTぷよの同期
+                    const nextColorsStr = (inputs[18].value || placeholderHints[18]).padStart(8, '1');
+                    const nextPlusStr   = (inputs[19].value || placeholderHints[19]).padStart(8, '0');
+                    const colors = ["transparent", "#ff3e3e", "#4da3ff", "#3eff3e", "#ffeb3e", "#ae81ff"];
+                    for (let i = 0; i < 8; i++) {
+                        const cell = document.getElementById(`next-cell-${i}`);
+                        if (cell) {
+                            const colorIdx = parseInt(nextColorsStr[i]) || 0;
+                            cell.style.backgroundColor = colors[colorIdx];
+                            cell.textContent = nextPlusStr[i] === "1" ? "+" : "";
+                        }
+                    }
+
+                    document.getElementById('best-score-display').textContent = `読込完了(${slotIndex})`;
+                }
+            }).catch(err => {
+                console.error("読込エラー:", err);
+            });
+            return; // 探索せずに終了
+        }
+
+        // 📤 【書き込みのみ実行】探索はスキップ
+        if (writeMatch) {
+            const slotIndex = writeMatch[1];
+            const currentValues = Array.from(inputs).map(inp => inp.value);
+            db.ref(`puyo_slots/slot_${slotIndex}`).set(currentValues)
+                .then(() => {
+                    document.getElementById('best-score-display').textContent = `保存完了(${slotIndex})`;
+                })
+                .catch(err => {
+                    console.error("保存エラー:", err);
+                });
+            return; // 探索せずに終了
+        }
+
+        // 🚀 【通常時のみ探索を実行】
         myExecs++;
         localStorage.setItem('puyo_my_execs', myExecs);
         db.ref('puyo_stats/execs').set(firebase.database.ServerValue.increment(1));
@@ -576,6 +643,9 @@ function syncGuideText() {
 
         }, 100);
     }
+
+    
+    
     
     function showProgressBar(seconds) {
         const container = document.getElementById('progress-container');
