@@ -819,8 +819,9 @@ function syncGuideText() {
 
         const allFields = document.querySelectorAll('.input-field');
 
-        // 🎯【修正①】クラッシュの原因だった配列宣言の漏れをここで100%確保
+        
         let detectedBonusArray = new Array(48).fill(0);
+        let detectedPlusArray  = new Array(48).fill(0);
         const reserve1Value = allFields[24] ? allFields[24].value.trim() : "0";
 
         for (let row = 0; row < 7; row++) {
@@ -918,8 +919,9 @@ function syncGuideText() {
                     for (let px = Math.floor(sX); px < Math.floor(eX); px++) {
                         const i = (py * width + px) * 4;
                         const r = data[i], g = data[i+1], b = data[i+2];
+                        rawAllPixels.push({ r, g, b }); //  全ピクセル
                         if (r > 240 && g > 240 && b > 240) continue; // テカリ除外
-                        pixels.push({ r, g, b });
+                        pixels.push({ r, g, b }); //  テカりなしピクセル
                     }
                 }
                 if (pixels.length === 0) {
@@ -976,6 +978,22 @@ function syncGuideText() {
                             detectedId = "2"; // 青
                         }
                     }
+
+                    // プラス判定
+                    const matchedPxCount = rawAllPixels.filter(p => p.r > 235 && p.g > 205 && p.b < 170).length;
+                    const plusRatio = matchedPxCount / rawAllPixels.length;
+                    
+                    let isPlusDetected = 0;
+                    if (detectedId === "4") {
+                        isPlusDetected = (plusRatio >= 0.25) ? 1 : 0; // 黄
+                    } else if (detectedId === "1" || detectedId === "2" || detectedId === "3" || detectedId === "5") {
+                        isPlusDetected = (plusRatio > 0.01) ? 1 : 0;  // 赤青緑紫
+                    } else {
+                        isPlusDetected = 0; // ハート
+                    }
+
+                    const cellIndex = (row - 1) * 8 + col;
+                    detectedPlusArray[cellIndex] = isPlusDetected;
                 }
                 rowTextBuffer += detectedId;
             }
@@ -987,6 +1005,17 @@ function syncGuideText() {
                 if (allFields[row - 1]) allFields[row - 1].value = rowTextBuffer; // 色行1〜6
             }
             currentLoopY += rowHeight;
+        }
+
+       //プラス代入
+       for (let rIdx = 0; rIdx < 6; rIdx++) {
+            let plusStr = "";
+            for (let cIdx = 0; cIdx < 8; cIdx++) {
+                plusStr += detectedPlusArray[rIdx * 8 + cIdx].toString();
+            }
+            if (allFields[6 + rIdx]) {
+                allFields[6 + rIdx].value = plusStr;
+            }
         }
 
         // 🎯【修正③】予備1＝1のときはボーナスエリアテキストボックスの上書きを完全に防ぐ（ロック）
@@ -1020,7 +1049,7 @@ function syncGuideText() {
                     const currentBeRowStr = updatedInputs[12 + rowIdx].value.padStart(8, '0');
                     isBonus = parseInt(currentBeRowStr[colIdx]) || 0;
                 }
-                updateUICell("original-board", cellIndex, internalColorSlot !== -1 ? internalColorSlot : absoluteColor, 0, isBonus);
+                updateUICell("original-board", cellIndex, internalColorSlot !== -1 ? internalColorSlot : absoluteColor, isPlus, isBonus);
             }
         }
         
