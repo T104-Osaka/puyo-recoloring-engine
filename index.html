@@ -914,6 +914,7 @@ function syncGuideText() {
                 let detectedId = "0";
 
                 // --- 7パターンの特徴量（RGB抽出） ---
+                let rawAllPixels = [];
                 let pixels = [];
                 for (let py = Math.floor(sY); py < Math.floor(eY); py++) {
                     for (let px = Math.floor(sX); px < Math.floor(eX); px++) {
