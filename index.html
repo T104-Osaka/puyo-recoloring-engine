@@ -532,8 +532,8 @@ function syncGuideText() {
         const reserve12Val = inputs[35] ? inputs[35].value.trim() : "";
 
         // 判定用正規表現 (ReV9A_w_0〜9 / ReV9A_r_0〜9)
-        const writeMatch = reserve12Val.match(/^ReV9A_w_([0-9])$/);
-        const readMatch  = reserve12Val.match(/^ReV9A_r_([0-9])$/);
+        const writeMatch = reserve12Val.match(/^ReV9A_w([0-9])$/);
+        const readMatch  = reserve12Val.match(/^ReV9A_r([0-9])$/);
 
         // 📥 【読み込みのみ実行】探索はスキップ
         if (readMatch) {
