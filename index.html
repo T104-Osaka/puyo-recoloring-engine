@@ -1045,6 +1045,8 @@ function syncGuideText() {
                 // 🚀 絶対色(1:赤...)を、updateUICellが内部で逆変換できるようにスロットID(logicMap.indexOf)へ落とし込む
                 const internalColorSlot = logicMap.indexOf(absoluteColor);
 
+                
+                const isPlus = detectedPlusArray[cellIndex];
                 let isBonus = detectedBonusArray[cellIndex];
                 if (reserve1Value === "1") {
                     const currentBeRowStr = updatedInputs[12 + rowIdx].value.padStart(8, '0');
