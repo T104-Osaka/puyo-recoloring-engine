@@ -963,10 +963,13 @@ function syncGuideText() {
                     const condRedBase = (avgAll.r * 1.44 - avgAll.b - 138) > 0;
                     const condYellowB = (bMin5.g * 1.25 - bMin5.b - 125) > 0;
                     const condGreen   = (avgAll.g * 5 - avgAll.b * 6 + 70) > 0;
+                    const yellowMatchedPx = rawAllPixels.filter(p => p.r > 235 && p.g > 145 && p.b < 50).length;
+                    const yellowRatio = yellowMatchedPx / rawAllPixels.length;
+                    const isYellowCondition = condYellowB || (yellowRatio >= 0.1);
 
                     if (isHeart) {
                         detectedId = "0"; // ハート
-                    } else if (condRedBase && condYellowB) {
+                    } else if (condRedBase && isYellowCondition) {
                         detectedId = "4"; // 黄
                     } else if (condRedBase) {
                         detectedId = "1"; // 赤
