@@ -965,7 +965,7 @@ function syncGuideText() {
                     const condGreen   = (avgAll.g * 5 - avgAll.b * 6 + 70) > 0;
                     const yellowMatchedPx = rawAllPixels.filter(p => p.r > 235 && p.g > 145 && p.b < 50).length;
                     const yellowRatio = yellowMatchedPx / rawAllPixels.length;
-                    const isYellowCondition = condYellowB || (yellowRatio >= 0.1);
+                    const isYellowCondition = condYellowB || (yellowRatio >= 0.05);
 
                     if (isHeart) {
                         detectedId = "0"; // ハート
